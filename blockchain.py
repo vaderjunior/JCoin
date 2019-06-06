@@ -49,6 +49,39 @@ class Blockchain():
 
     def getLastBlock(self):
         return Block(**self.chain[-1])
+    
+    def resolve_conflicts(self):
+        """
+        This is our Consensus Algorithm, it resolves conflicts
+        by replacing our chain with the longest one in the network.
+        :return: <bool> True if our chain was replaced, False if not
+        """
+
+        neighbours = self.nodes
+        new_chain = None
+
+        
+        max_length = len(self.chain)
+
+        
+        for node in neighbours:
+            response = requests.get(f'http://{node}/chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+        
+                if length > max_length and self.valid_chain(chain):
+                    max_length = length
+                    new_chain = chain
+
+        
+        if new_chain:
+            self.chain = new_chain
+            return True
+
+        return False
 
     def minePendingTransaction(self,mining_reward_address):
         block=Block(0,str(datetime.now()),self.pendingTransaction)
